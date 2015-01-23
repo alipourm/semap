@@ -5,12 +5,15 @@ import re
 import glob
 import os
 
-ICSE_ID = 'citation.cfm?id=2568225'
-ISSTA_ID = 'citation.cfm?id=2610384'
-FSE_ID = 'citation.cfm?id=2635868'
-ESEC_ID = 'citation.cfm?id=2491411'
-ESEM_ID = 'citation.cfm?id=2652524'
-ASE_ID = 'citation.cfm?id=2642937'
+
+id = {}
+
+id['ICSE'] = 'citation.cfm?id=2568225'
+id['ISSTA'] = 'citation.cfm?id=2610384'
+id['FSE'] = 'citation.cfm?id=2635868'
+id['ESEC'] = 'citation.cfm?id=2491411'
+id['ESEM'] = 'citation.cfm?id=2652524'
+id['ASE'] = 'citation.cfm?id=2642937'
 
 def scrap(citation_id):
     proc = Proceedings(citation_id)
@@ -22,6 +25,24 @@ def scrap(citation_id):
         proc = Proceedings(cite)
         proc.dump()
         print proc.title
+
+
+
+
+cwd = os.getcwd()
+
+for conference in id:
+    if not os.path.exists(conference):
+        try:
+            os.makedirs(conference)
+        except OSError:
+            raise
+    print 'collecting data of conference {0}'.format(conference)
+    os.chdir(conference)
+    scrap(id[conference])
+    os.chdir(cwd)
+    
+        
 
 
 # def papers2json(directory, file_name):
