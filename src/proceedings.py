@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 import os
+import io
 
 
 class Proceedings:
@@ -22,6 +23,11 @@ class Proceedings:
             self.toc = self.get_toc()
             self.papers = self.get_papers()
 
+    def refresh(self):
+        self.title = self.get_title()
+        self.toc = self.get_toc()
+        self.papers = self.get_papers()
+
     def get_acm_main_page(self):
         response = req.get(self.url)
         content = response.content
@@ -30,8 +36,8 @@ class Proceedings:
     def get_title(self):
         """ Returns proceeding title """
         soup = BeautifulSoup(self.main_page)
-
         title_tag = soup.find(lambda tag: tag.has_attr('name') and tag['name'] == 'citation_conference_title')
+        print 'title_tag:', title_tag
         return title_tag['content']
 
 
@@ -70,7 +76,7 @@ class Proceedings:
                 'papers': self.papers,
                 'dois': self.get_papers_doi()
                 }
-        open(file_name, 'w').write(json.dumps(data, indent=2))
+        json.dump(data, open(file_name, 'w'), indent=2)
 
     def load(self, file_name):
         """
@@ -78,12 +84,13 @@ class Proceedings:
         :param file_name:
         :return:
         """
+        
         data = json.load(open(file_name))
         self.main_page = data['main_page']
         self.title = data['title']
         self.toc = data['toc']
         self.url = data['url']
-
+        
     def get_papers_doi(self):
         """ Returns the DOI of papers
         :return:
@@ -109,17 +116,20 @@ class Proceedings:
     def get_papers(self):
         soup = BeautifulSoup(self.toc)
         papers_tables = soup.find('table')
-        # s = ''.join(map(lambda t: str(t), papers_tables))
-        # print s
         soup = BeautifulSoup(str(papers_tables))
         a_tags = soup.find_all(lambda t: t.has_attr('href'))
         hrefs = filter(lambda t: 'citation' in t['href'] or 'author' in t['href'], a_tags)
+        return self.get_title_auth(hrefs, result=[])
 
-        #
-        # for t in hrefs:
-        #     href = t['href']
-        #     paper = {'id' : }
-        # for t in hrefs:
-        #     print t
-        #     print t.string
-        return self.get_title_auth(hrefs)
+    def get_title_auth_href(self, l, result=[], authors_map = {}):
+        if len(l) <= 1:
+            return result, authors_map
+        title = l[0].string
+        authors = []
+        i = 1
+        while i < len(l) and 'author' in l[i]['href']:
+            href = ""
+            authors.append(l[i].string)
+            i += 1
+        result.append({'authors': authors, 'title': title, 'venue': self.title})
+        return self.get_title_auth(l[i:], result)
