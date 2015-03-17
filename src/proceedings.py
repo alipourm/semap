@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 import os
-
+import itertools
 
 class Proceedings:
     """Abstraction of an ACM DL conference proceedings page"""
@@ -83,6 +83,15 @@ class Proceedings:
         self.title = data['title']
         self.toc = data['toc']
         self.url = data['url']
+        self.refresh() # Due to error during the scraping
+
+    def refresh(self):
+        self.main_page = self.get_acm_main_page()
+        self.title = self.get_title()
+        self.toc = self.get_toc()
+        self.papers = self.get_papers()
+
+
 
     def get_papers_doi(self):
         """ Returns the DOI of papers
@@ -99,9 +108,12 @@ class Proceedings:
             return result
         title = l[0].string
         authors = []
+
         i = 1
         while i < len(l) and 'author' in l[i]['href']:
-            authors.append(l[i].string)
+            # http://dl.acm.org/author_page.cfm?id=81453655083&CFID=467290987&CFTOKEN=48249807
+            href = l[i]['href'].split('&')[0]
+            authors.append({'author_id': href, 'name': l[i].string})
             i += 1
         result.append({'authors': authors, 'title': title, 'venue': self.title})
         return self.get_title_auth(l[i:], result)
@@ -114,12 +126,21 @@ class Proceedings:
         soup = BeautifulSoup(str(papers_tables))
         a_tags = soup.find_all(lambda t: t.has_attr('href'))
         hrefs = filter(lambda t: 'citation' in t['href'] or 'author' in t['href'], a_tags)
+        return self.get_title_auth(hrefs, result=[])
 
-        #
-        # for t in hrefs:
-        #     href = t['href']
-        #     paper = {'id' : }
-        # for t in hrefs:
-        #     print t
-        #     print t.string
-        return self.get_title_auth(hrefs)
+    def get_authors(self):
+        authors = {}
+        for p in self.papers:
+            for auth in p['authors']:
+                authors[auth['author_id']] = auth['name']
+        return authors
+
+    def get_edges(self):
+        edges = []
+        for p in self.papers:
+            if len(p['authors'])> 1:
+                for edge in itertools.combinations(p['authors'], 2):
+                    edges.append(edge)
+        return edges
+
+
