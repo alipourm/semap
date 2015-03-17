@@ -16,6 +16,7 @@ id['ESEM'] = 'citation.cfm?id=2652524'
 id['ASE'] = 'citation.cfm?id=2642937'
 
 def scrap(citation_id):
+    time.sleep(random.randint(50, 90))
     proc = Proceedings(citation_id)
     proc.dump()
     print proc.title
@@ -25,6 +26,7 @@ def scrap(citation_id):
         proc = Proceedings(cite)
         proc.dump()
         print proc.title
+
 
 
 
@@ -42,28 +44,3 @@ for conference in id:
     scrap(id[conference])
     os.chdir(cwd)
     
-        
-
-
-# def papers2json(directory, file_name):
-#     outfile = open(file_name, 'w')
-#     for f in glob.glob(directory + '*.json'):
-#         print 'Processing', f
-#         proc =Proceedings()
-#         proc.load(f)
-#         for l in proc.get_papers():
-#             outfile.write(str(l) + '\n')
-#     outfile.close()
-#
-# # papers2json(sys.argv[1], sys.argv[2])
-# cwd = os.getcwd()
-# os.chdir('icse')
-# scrap(ICSE_ID)
-# os.chdir(cwd + os.sep + 'fse')
-# scrap(FSE_ID)
-# os.chdir(cwd + os.sep + 'esec')
-# scrap(ESEC_ID)
-# os.chdir(cwd + os.sep + 'issta')
-# scrap(ISSTA_ID)
-# os.chdir(cwd + os.sep + 'ase')
-# scrap(ASE_ID)
